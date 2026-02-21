@@ -1,18 +1,16 @@
-# LogiCore — Setup Guide
+# LogiCore — Fleet & Logistics Management System
 
-## Quick Start (3 commands)
+**Live Demo:** [https://logicoree77.web.app](https://logicoree77.web.app)
 
-```bash
-# 1. Create Vite project (run in your desired parent folder)
-npm create vite@latest logicore -- --template react
-cd logicore
+## Tech Stack
+- Frontend: React (Vite), React Router
+- Styles: Custom Vanilla CSS (Apple-inspired Glassmorphism)
+- Database & Auth: Firebase (Firestore, Authentication)
+- Hosting: Firebase Hosting
+- UI Components: Recharts, Lucide React
 
-# 2. Install all dependencies
-npm install react-router-dom recharts jspdf jspdf-autotable papaparse lucide-react
-
-# 3. Replace the generated files with the LogiCore files, then:
-npm run dev
-```
+## Setup Details
+This project has already been initialized with a fully configured Firebase backend. The database automatically synchronizes real-time updates and includes pre-seeded demo data for 17 vehicles, 21 trips, 17 drivers, and assorted maintenance/expenses records.
 
 ## File Structure to Drop In
 
@@ -63,14 +61,6 @@ import VehiclesPage from './pages/VehiclesPage';
 // Then in routes:
 <Route path="/vehicles" element={<VehiclesPage />} />
 ```
-
-## Resetting Demo Data
-
-Open browser console on any page and run:
-```js
-localStorage.removeItem('logicore_state'); location.reload();
-```
-Or call `resetData()` from the AppContext.
 
 ## Key Patterns
 
