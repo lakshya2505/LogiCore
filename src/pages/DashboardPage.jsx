@@ -36,7 +36,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function DashboardPage() {
-  const { vehicles, drivers, trips, expenses, maintenanceLogs, computed, user } = useApp();
+  const { vehicles, drivers, trips, expenses, maintenanceLogs, computed, user, loading } = useApp();
 
   // Fleet status breakdown
   const fleetStatusData = useMemo(() => {
@@ -111,6 +111,11 @@ export default function DashboardPage() {
       />
 
       <div className="page-body animate-fade-in">
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', color: 'var(--text-muted)' }}>
+            <div>Loading your fleet data...</div>
+          </div>
+        ) : (
         {/* KPI Cards */}
         <div className="kpi-grid">
           <KPICard
@@ -416,6 +421,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </>
   );

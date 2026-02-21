@@ -1,0 +1,97 @@
+/**
+ * FIRESTORE SECURITY RULES FOR LOGICORE
+ * 
+ * To apply these rules:
+ * 1. Go to Firebase Console > Firestore Database
+ * 2. Click "Rules" tab at the top
+ * 3. Replace all content with the rules below
+ * 4. Click "Publish"
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function: check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Helper function: get user role from Firestore
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Helper function: check if user is a Manager
+    function isManager() {
+      return isAuth() && getUserRole() == 'Manager';
+    }
+    
+    // Helper function: check if user is a Dispatcher
+    function isDispatcher() {
+      return isAuth() && getUserRole() == 'Dispatcher';
+    }
+
+    // ─── USERS COLLECTION ───
+    // Users can only read/write their own profile
+    match /users/{userId} {
+      allow read: if isAuth() && request.auth.uid == userId;
+      allow write: if isAuth() && request.auth.uid == userId;
+      allow create: if isAuth();
+    }
+
+    // ─── VEHICLES COLLECTION ───
+    // Managers: full access
+    // Dispatchers: read/update only (not delete/add)
+    match /vehicles/{vehicleId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isManager();
+      allow update: if isDispatcher() && (
+        resource.data.status in ['Available', 'On Trip', 'In Shop'] ||
+        request.resource.data.status in ['Available', 'On Trip', 'In Shop']
+      );
+    }
+
+    // ─── DRIVERS COLLECTION ───
+    // Managers: full access
+    // Dispatchers: read only
+    match /drivers/{driverId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isManager();
+    }
+
+    // ─── TRIPS COLLECTION ───
+    // Managers & Dispatchers: read/write
+    // Limitations: Dispatchers can't modify completed trips
+    match /trips/{tripId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth() && (
+        isManager() || 
+        (isDispatcher() && resource.data.status != 'Completed')
+      );
+      allow delete: if isManager();
+    }
+
+    // ─── EXPENSES COLLECTION ───
+    // Managers & Dispatchers: read/write
+    match /expenses/{expenseId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if isManager();
+    }
+
+    // ─── MAINTENANCELOGS COLLECTION ───
+    // Managers: full access
+    // Dispatchers: read only
+    match /maintenanceLogs/{logId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isManager();
+    }
+
+    // ─── DEFAULT DENY ───
+    // All other reads/writes are denied
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

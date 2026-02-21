@@ -32,9 +32,17 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar() {
-  const { user, vehicles, logout, resetData } = useApp();
+  const { user, vehicles, logout } = useApp();
 
   const maintenanceCount = vehicles.filter(v => v.status === 'In Shop').length;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <aside className="sidebar">
@@ -83,7 +91,7 @@ export default function Sidebar() {
         </div>
         <button
           className="btn btn-ghost btn-icon"
-          onClick={logout}
+          onClick={handleLogout}
           title="Logout"
           style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}
         >

@@ -9,11 +9,14 @@ import MaintenancePage from './pages/MaintenancePage';
 import ExpensesPage    from './pages/ExpensesPage';
 import DriversPage     from './pages/DriversPage';
 import AnalyticsPage   from './pages/AnalyticsPage';
+import SetupPage       from './pages/SetupPage';
 import './index.css';
 
 function RequireAuth({ children, allowedRoles }) {
-  const { user } = useApp();
+  const { user, loading } = useApp();
   const location = useLocation();
+  
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: 'var(--text-muted)' }}>Loading...</div>;
   if (!user) return <Navigate to="/" state={{ from: location }} replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/dashboard" replace />;
   return children;
@@ -35,6 +38,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+      <Route path="/setup" element={<SetupPage />} />
       <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/vehicles"  element={<VehiclesPage />} />

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layers, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { seedData } from '../data/seedData';
 
 export default function LoginPage() {
   const { login } = useApp();
@@ -19,26 +18,24 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    await new Promise(r => setTimeout(r, 500)); // simulate auth
-
-    const user = seedData.users.find(
-      u => u.email === email.trim().toLowerCase() && u.password === password
-    );
-
-    setLoading(false);
-
-    if (!user) {
-      setError('Invalid email or password. Check the demo credentials below.');
-      return;
+    try {
+      await login(email.trim().toLowerCase(), password);
+      // Firebase will handle auth state update, which triggers navigation via protected routes
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+      setLoading(false);
     }
-
-    login(user);
-    navigate('/dashboard');
   }
 
-  function quickLogin(userEmail) {
-    const user = seedData.users.find(u => u.email === userEmail);
-    if (user) { login(user); navigate('/dashboard'); }
+  async function quickLogin(userEmail, password) {
+    setError('');
+    setLoading(true);
+    try {
+      await login(userEmail, password);
+    } catch (err) {
+      setError(err.message || 'Login failed');
+      setLoading(false);
+    }
   }
 
   return (
@@ -121,20 +118,20 @@ export default function LoginPage() {
 
         {/* Demo credentials */}
         <div className="login-creds">
-          <strong>Demo Credentials</strong><br />
+          <strong>Firebase Demo Credentials</strong><br />
           Manager: manager@logicore.io / manager123<br />
           Dispatcher: dispatcher@logicore.io / dispatch123<br />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => quickLogin('manager@logicore.io')}
+              onClick={() => quickLogin('manager@logicore.io', 'manager123')}
               style={{ flex: 1, justifyContent: 'center', fontSize: '0.68rem' }}
             >
               Login as Manager
             </button>
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => quickLogin('dispatcher@logicore.io')}
+              onClick={() => quickLogin('dispatcher@logicore.io', 'dispatch123')}
               style={{ flex: 1, justifyContent: 'center', fontSize: '0.68rem' }}
             >
               Login as Dispatcher

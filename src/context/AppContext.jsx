@@ -1,28 +1,19 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { seedData } from '../data/seedData';
+import { onAuthStateChanged, loginUser, logoutUser } from '../services/authService';
+import { getUserProfile, createUserProfile, getDocuments, subscribeToCollection } from '../services/firestoreService';
 
 const AppContext = createContext(null);
 
-const STORAGE_KEY = 'logicore_state';
-
-function loadState() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return null;
-}
-
 function getInitialState() {
-  const stored = loadState();
-  if (stored) return stored;
   return {
-    vehicles: seedData.vehicles,
-    drivers: seedData.drivers,
-    trips: seedData.trips,
-    maintenanceLogs: seedData.maintenanceLogs,
-    expenses: seedData.expenses,
+    vehicles: [],
+    drivers: [],
+    trips: [],
+    maintenanceLogs: [],
+    expenses: [],
     user: null,
+    loading: true,
   };
 }
 
@@ -31,6 +22,13 @@ function reducer(state, action) {
     // Auth
     case 'LOGIN':   return { ...state, user: action.payload };
     case 'LOGOUT':  return { ...state, user: null };
+
+    // Bulk set from Firestore
+    case 'SET_VEHICLES':       return { ...state, vehicles: action.payload };
+    case 'SET_DRIVERS':        return { ...state, drivers: action.payload };
+    case 'SET_TRIPS':          return { ...state, trips: action.payload };
+    case 'SET_MAINTENANCE_LOGS': return { ...state, maintenanceLogs: action.payload };
+    case 'SET_EXPENSES':       return { ...state, expenses: action.payload };
 
     // Vehicles
     case 'ADD_VEHICLE':    return { ...state, vehicles: [...state.vehicles, action.payload] };
@@ -119,12 +117,69 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, getInitialState);
+  const [loading, setLoading] = useState(true);
+  const [unsubscribers, setUnsubscribers] = useState({});
 
+  // Monitor auth state changes
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {}
-  }, [state]);
+    const unsubAuth = onAuthStateChanged(async (firebaseUser) => {
+      if (firebaseUser) {
+        // User is logged in - fetch their profile and data
+        try {
+          const userProfile = await getUserProfile(firebaseUser.uid);
+          if (userProfile) {
+            dispatch({
+              type: 'LOGIN',
+              payload: {
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                ...userProfile
+              }
+            });
+
+            // Subscribe to real-time data for this user
+            const unsub = {};
+            
+            unsub.vehicles = subscribeToCollection('vehicles', (docs) => {
+              dispatch({ type: 'SET_VEHICLES', payload: docs });
+            });
+            
+            unsub.drivers = subscribeToCollection('drivers', (docs) => {
+              dispatch({ type: 'SET_DRIVERS', payload: docs });
+            });
+            
+            unsub.trips = subscribeToCollection('trips', (docs) => {
+              dispatch({ type: 'SET_TRIPS', payload: docs });
+            });
+            
+            unsub.maintenanceLogs = subscribeToCollection('maintenanceLogs', (docs) => {
+              dispatch({ type: 'SET_MAINTENANCE_LOGS', payload: docs });
+            });
+            
+            unsub.expenses = subscribeToCollection('expenses', (docs) => {
+              dispatch({ type: 'SET_EXPENSES', payload: docs });
+            });
+
+            setUnsubscribers(unsub);
+          }
+        } catch (error) {
+          console.error('Failed to load user profile:', error);
+        }
+      } else {
+        // User logged out
+        dispatch({ type: 'LOGOUT' });
+        // Cleanup subscriptions
+        Object.values(unsubscribers).forEach(unsub => unsub?.());
+        setUnsubscribers({});
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      unsubAuth();
+      Object.values(unsubscribers).forEach(unsub => unsub?.());
+    };
+  }, []);
 
   // Helper: generate ID
   const genId = (prefix) => `${prefix}${Date.now()}`;
@@ -144,10 +199,23 @@ export function AppProvider({ children }) {
   const value = {
     ...state,
     computed,
+    loading,
     dispatch,
     // Convenience actions
-    login: (user) => dispatch({ type: 'LOGIN', payload: user }),
-    logout: () => dispatch({ type: 'LOGOUT' }),
+    login: async (email, password) => {
+      try {
+        await loginUser(email, password);
+      } catch (error) {
+        throw error;
+      }
+    },
+    logout: async () => {
+      try {
+        await logoutUser();
+      } catch (error) {
+        throw error;
+      }
+    },
     addVehicle: (v) => dispatch({ type: 'ADD_VEHICLE', payload: { ...v, id: genId('v') } }),
     updateVehicle: (v) => dispatch({ type: 'UPDATE_VEHICLE', payload: v }),
     deleteVehicle: (id) => dispatch({ type: 'DELETE_VEHICLE', payload: id }),
@@ -164,10 +232,7 @@ export function AppProvider({ children }) {
     deleteMaintenance: (id) => dispatch({ type: 'DELETE_MAINTENANCE', payload: id }),
     addExpense: (e) => dispatch({ type: 'ADD_EXPENSE', payload: { ...e, id: genId('e') } }),
     deleteExpense: (id) => dispatch({ type: 'DELETE_EXPENSE', payload: id }),
-    resetData: () => {
-      localStorage.removeItem(STORAGE_KEY);
-      window.location.reload();
-    },
+    deleteTrip: (id) => dispatch({ type: 'DELETE_TRIP', payload: id }),
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
