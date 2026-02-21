@@ -6,9 +6,9 @@ import DataTable from '../components/DataTable';
 import StatusPill from '../components/StatusPill';
 import Modal from '../components/Modal';
 
-const TYPES    = ['Truck', 'Van', 'Bike', 'Trailer', 'Pickup'];
-const FUELS    = ['Diesel', 'Petrol', 'CNG', 'Electric', 'Hybrid'];
-const REGIONS  = ['North', 'South', 'East', 'West', 'Central'];
+const TYPES = ['Truck', 'Van'];
+const FUELS = ['Diesel', 'Petrol', 'CNG', 'Electric', 'Hybrid'];
+const REGIONS = ['North', 'South', 'East', 'West', 'Central'];
 const STATUSES = ['Available', 'In Shop', 'Retired'];
 
 const EMPTY = {
@@ -18,8 +18,8 @@ const EMPTY = {
 
 function validate(f) {
   const e = {};
-  if (!f.name.trim())          e.name = 'Vehicle name is required';
-  if (!f.plate.trim())         e.plate = 'Plate number is required';
+  if (!f.name.trim()) e.name = 'Vehicle name is required';
+  if (!f.plate.trim()) e.plate = 'Plate number is required';
   if (!f.capacity || f.capacity <= 0) e.capacity = 'Capacity must be > 0';
   if (!f.odometer && f.odometer !== 0) e.odometer = 'Odometer is required';
   if (!f.year || f.year < 1990 || f.year > new Date().getFullYear() + 1) e.year = 'Valid year required';
@@ -29,13 +29,13 @@ function validate(f) {
 export default function VehiclesPage() {
   const { vehicles, addVehicle, updateVehicle, deleteVehicle } = useApp();
 
-  const [modalOpen,   setModalOpen]   = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(null); // vehicle to delete
-  const [editTarget,  setEditTarget]  = useState(null); // vehicle being edited
-  const [form,        setForm]        = useState(EMPTY);
-  const [errors,      setErrors]      = useState({});
+  const [editTarget, setEditTarget] = useState(null); // vehicle being edited
+  const [form, setForm] = useState(EMPTY);
+  const [errors, setErrors] = useState({});
   const [filterStatus, setFilterStatus] = useState('All');
-  const [filterType,   setFilterType]   = useState('All');
+  const [filterType, setFilterType] = useState('All');
 
   function openAdd() {
     setEditTarget(null);
@@ -61,13 +61,13 @@ export default function VehiclesPage() {
     if (Object.keys(e).length) { setErrors(e); return; }
     const payload = {
       ...form,
-      capacity:       Number(form.capacity),
-      odometer:       Number(form.odometer),
+      capacity: Number(form.capacity),
+      odometer: Number(form.odometer),
       acquisitionCost: Number(form.acquisitionCost) || 0,
-      year:           Number(form.year),
+      year: Number(form.year),
     };
     if (editTarget) updateVehicle({ ...editTarget, ...payload });
-    else            addVehicle(payload);
+    else addVehicle(payload);
     setModalOpen(false);
   }
 
@@ -82,15 +82,15 @@ export default function VehiclesPage() {
 
   const filtered = vehicles.filter(v =>
     (filterStatus === 'All' || v.status === filterStatus) &&
-    (filterType   === 'All' || v.type   === filterType)
+    (filterType === 'All' || v.type === filterType)
   );
 
   const summary = {
-    total:     vehicles.length,
-    active:    vehicles.filter(v => v.status === 'Available').length,
-    onTrip:    vehicles.filter(v => v.status === 'On Trip').length,
-    inShop:    vehicles.filter(v => v.status === 'In Shop').length,
-    retired:   vehicles.filter(v => v.status === 'Retired').length,
+    total: vehicles.length,
+    active: vehicles.filter(v => v.status === 'Available').length,
+    onTrip: vehicles.filter(v => v.status === 'On Trip').length,
+    inShop: vehicles.filter(v => v.status === 'In Shop').length,
+    retired: vehicles.filter(v => v.status === 'Retired').length,
   };
 
   const columns = [
@@ -108,9 +108,9 @@ export default function VehiclesPage() {
         </div>
       ),
     },
-    { key: 'type',     label: 'Type',      sortable: true },
-    { key: 'region',   label: 'Region',    sortable: true },
-    { key: 'fuel',     label: 'Fuel',      sortable: true },
+    { key: 'type', label: 'Type', sortable: true },
+    { key: 'region', label: 'Region', sortable: true },
+    { key: 'fuel', label: 'Fuel', sortable: true },
     {
       key: 'capacity', label: 'Capacity', sortable: true, mono: true,
       render: (v) => `${Number(v).toLocaleString()} kg`,
@@ -165,11 +165,11 @@ export default function VehiclesPage() {
         {/* Summary strip */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
-            { label: 'Total',     val: summary.total,   color: 'var(--cyan)' },
-            { label: 'Available', val: summary.active,  color: 'var(--green)' },
-            { label: 'On Trip',   val: summary.onTrip,  color: 'var(--blue)' },
-            { label: 'In Shop',   val: summary.inShop,  color: 'var(--amber)' },
-            { label: 'Retired',   val: summary.retired, color: 'var(--text-muted)' },
+            { label: 'Total', val: summary.total, color: 'var(--cyan)' },
+            { label: 'Available', val: summary.active, color: 'var(--green)' },
+            { label: 'On Trip', val: summary.onTrip, color: 'var(--blue)' },
+            { label: 'In Shop', val: summary.inShop, color: 'var(--amber)' },
+            { label: 'Retired', val: summary.retired, color: 'var(--text-muted)' },
           ].map(s => (
             <div key={s.label} className="card" style={{ flex: '1 1 120px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 2 }}>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: s.color, letterSpacing: -1 }}>{s.val}</div>
