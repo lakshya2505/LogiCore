@@ -38,8 +38,15 @@ logicore/
     │   └── Modal.jsx                 ← new
     └── pages/
         ├── LoginPage.jsx             ← new
-        └── DashboardPage.jsx         ← new
-```
+        └── DashboardPage.jsx
+        └── setupPage.jsx
+        └── Driverspage.jsx
+        └── expensespage.jsx
+        └── analyticspage.jsx
+        └── maintanencepage.jsx   
+        └── tripspage.jsx 
+        └── vechilesPage.jsx ← new
+```    
 
 ## Demo Credentials
 
@@ -50,17 +57,6 @@ logicore/
 
 **Manager** — full access to all 8 pages  
 **Dispatcher** — access to Fleet, Trips, Drivers, Expenses only
-
-## Adding Remaining Pages
-
-In `src/App.jsx`, replace each `<PlaceholderPage name="X" />` with your component import:
-
-```jsx
-// Example:
-import VehiclesPage from './pages/VehiclesPage';
-// Then in routes:
-<Route path="/vehicles" element={<VehiclesPage />} />
-```
 
 ## Key Patterns
 
